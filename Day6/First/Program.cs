@@ -19,7 +19,7 @@ namespace First
 
             var masterPoints = GetInputPoints(inputLines);
             var mapPoints = GenerateMap(masterPoints);
-            var processedPoints = ProcessMap(mapPoints);
+            var processedPoints = ProcessMapRefactor(mapPoints, masterPoints);
             var filteredPoints = FilterPoints(processedPoints, masterPoints);
             var pointGroups = filteredPoints.GroupBy(p => p.Id);
             var biggestArea = pointGroups.Max(g => g.Count());
@@ -61,6 +61,9 @@ namespace First
             points.AddRange(masterPoints);
             return points.ToArray();
         }
+
+        /*
+        NONEFECTIVE SOLUTION (BREADTH-FIRST SEARCH)
 
         public static Point[] ProcessMap(Point[] points)
         {
@@ -105,13 +108,44 @@ namespace First
             return pointsGraph.Keys.ToArray();
         }
 
+        */
+
+        public static Point[] ProcessMapRefactor(Point[] allPoints, Point[] masterPoints)
+        {
+            foreach (var point in allPoints)
+            {
+                if (!point.IsMaster)
+                {
+                    var coordinatesDistance = new Dictionary<Point, int>(masterPoints.Length);
+                    
+                    foreach (var coordinate in masterPoints)
+                    {
+                        coordinatesDistance.Add(coordinate, CalculateDistanceToCoordinate(point, coordinate));
+                    }
+
+                    var shortestDistance = coordinatesDistance.Values.Min(d => d);
+                    if (coordinatesDistance.Values.Where(d => d == shortestDistance).Count() == 1)
+                    {
+                        point.Id = coordinatesDistance.Where(c => c.Value == shortestDistance).First().Key.Id;
+                    }
+                }
+            }
+
+            return allPoints;
+        }
+
+        public static int CalculateDistanceToCoordinate(Point p1, Point p2)
+        {
+            return Math.Abs(p1.X - p2.X) + Math.Abs(p1.Y - p2.Y);
+        }
+
         public static Point[] FilterPoints(Point[] processedPoints, Point[] masterPoints)
         {
             var (minX, maxX, minY, maxY) = GetMapBounds(masterPoints);
 
-            var processedPointsList = processedPoints.ToList();
-            processedPointsList.AddRange(masterPoints);
-            processedPoints = processedPointsList.ToArray();
+            // var processedPointsList = processedPoints.ToList();
+            // processedPointsList.AddRange(masterPoints);
+            // processedPoints = processedPointsList.ToArray();
             
             var idsOnBounds = processedPoints.Where(p => p.X == minX ||
                                                          p.X == maxX ||
@@ -129,6 +163,9 @@ namespace First
             return processedPoints;
         }
 
+        /*
+        NONEFECTIVE SOLUTION (BREADTH-FIRST SEARCH)
+
         public static Dictionary<Point, Point[]> GenerateGraph(Point[] points)
         {
             var pointsGraph = new Dictionary<Point, Point[]>(points.Length);
@@ -145,6 +182,8 @@ namespace First
             }
             return pointsGraph;
         }
+
+        */
 
         public static (int, int, int, int) GetMapBounds(Point[] masterPoints)
         {
