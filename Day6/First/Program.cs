@@ -9,6 +9,7 @@ namespace First
     {
         static void Main(string[] args)
         {
+            var start = DateTime.Now;
             string[] inputLines;
             using (var sr = new StreamReader("input.txt"))
             {
@@ -19,7 +20,11 @@ namespace First
             var masterPoints = GetInputPoints(inputLines);
             var mapPoints = GenerateMap(masterPoints);
             var processedPoints = ProcessMap(mapPoints);
-
+            var filteredPoints = FilterPoints(processedPoints, masterPoints);
+            var pointGroups = filteredPoints.GroupBy(p => p.Id);
+            var biggestArea = pointGroups.Max(g => g.Count());
+            Console.WriteLine(biggestArea.ToString());
+            Console.WriteLine((DateTime.Now - start).ToString(@"mm\:ss"));
         }
 
         public static Point[] GetInputPoints(string[] input)
@@ -98,6 +103,30 @@ namespace First
             }
 
             return pointsGraph.Keys.ToArray();
+        }
+
+        public static Point[] FilterPoints(Point[] processedPoints, Point[] masterPoints)
+        {
+            var (minX, maxX, minY, maxY) = GetMapBounds(masterPoints);
+
+            var processedPointsList = processedPoints.ToList();
+            processedPointsList.AddRange(masterPoints);
+            processedPoints = processedPointsList.ToArray();
+            
+            var idsOnBounds = processedPoints.Where(p => p.X == minX ||
+                                                         p.X == maxX ||
+                                                         p.Y == minY ||
+                                                         p.Y == maxY)
+                                             .Select(p => p.Id)
+                                             .ToHashSet();
+            idsOnBounds = idsOnBounds.Distinct().ToHashSet();
+
+            foreach (var id in idsOnBounds)
+            {
+                processedPoints = processedPoints.Where(p => p.Id != id).ToArray();
+            }
+
+            return processedPoints;
         }
 
         public static Dictionary<Point, Point[]> GenerateGraph(Point[] points)
